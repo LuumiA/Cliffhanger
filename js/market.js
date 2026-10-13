@@ -19,6 +19,8 @@ const ERRORS = {
   trop_d_annonces: "Tu as déjà 30 annonces en cours.",
   trop_d_echanges: "Tu as déjà 20 propositions en attente.",
   echange_introuvable: "Cette proposition n'existe plus.",
+  deja_reclame: "Cette récompense est déjà récupérée.",
+  palier_non_atteint: "Ce palier n'est pas encore atteint.",
   stock_plein: "Ton stock de boosters est déjà plein.",
 };
 const errText = (e) => { const k = Object.keys(ERRORS).find((x) => e.message.includes(x)); return k ? ERRORS[k] : "Erreur : " + e.message; };
@@ -64,12 +66,13 @@ function setMarketTab(tab) {
   marketTab = tab;
   document.querySelectorAll("#market-tabs button").forEach((b) => b.classList.toggle("on", b.dataset.m === tab));
   document.querySelectorAll(".mpane").forEach((p) => (p.hidden = p.id !== `m-${tab}`));
-  ({ browse: renderBrowse, mine: renderMine, trades: renderTrades })[tab]();
+  ({ browse: renderBrowse, mine: renderMine, trades: renderTrades, missions: renderMissions })[tab]();
 }
 document.querySelectorAll("#market-tabs button").forEach((b) => b.addEventListener("click", () => setMarketTab(b.dataset.m)));
 
 async function loadMarket() {
   await loadEconomy();
+  refreshTradeBadge();
   setMarketTab(marketTab);
 }
 
@@ -343,11 +346,86 @@ async function loadTradeList() {
   }));
 }
 
+let tradeN = 0, missionN = 0;
+function updateDot() { $("market-dot").hidden = tradeN + missionN === 0; }
 function setTradeBadge(n) {
-  const b = $("trade-badge"), d = $("market-dot");
-  b.hidden = d.hidden = n === 0;
+  const b = $("trade-badge");
+  tradeN = n;
+  b.hidden = n === 0;
   b.textContent = n;
+  updateDot();
 }
+function setMissionBadge(n) {
+  const b = $("mission-badge");
+  missionN = n;
+  b.hidden = n === 0;
+  b.textContent = n;
+  updateDot();
+}
+// ---------- Missions ----------
+const claimable = (list) => list.reduce((n, m) => n + m.tiers.filter((t) => !t.claimed && m.value >= t.goal).length, 0);
+async function refreshMissionBadge() {
+  if (!state.userId) return;
+  const { data } = await db.rpc("get_missions");
+  if (data) setMissionBadge(claimable(data));
+}
+async function pingLogin() {
+  if (!state.userId) return;
+  await db.rpc("ping_login");
+  refreshMissionBadge();
+}
+
+async function renderMissions() {
+  const pane = $("m-missions");
+  if (!pane.children.length) pane.innerHTML = '<p class="muted">Chargement…</p>';
+  const { data, error } = await db.rpc("get_missions");
+  if (error) { pane.textContent = errText(error); return; }
+  setMissionBadge(claimable(data));
+  const total = data.reduce((n, m) => n + m.tiers.filter((t) => !t.claimed && m.value >= t.goal).reduce((a, t) => a + t.reward, 0), 0);
+  pane.innerHTML = `
+    <div class="box mission-top">
+      <div><b>Missions</b><p class="muted">Atteins des paliers pour gagner des tickets. Chaque récompense se récupère une seule fois.</p></div>
+      <button class="btn" id="claim-all" ${total ? "" : "disabled"}>${total ? `Tout récupérer · +${fmt(total)} ${TICKET}` : "Rien à récupérer"}</button>
+    </div>
+    <div class="missions">${data.map((m) => {
+      const next = m.tiers.find((t) => m.value < t.goal);
+      const prevGoal = next ? (m.tiers[m.tiers.indexOf(next) - 1]?.goal ?? 0) : 0;
+      const pct = next ? Math.max(0, Math.min(100, ((m.value - prevGoal) / (next.goal - prevGoal)) * 100)) : 100;
+      return `<div class="mission">
+        <div class="mhead"><b>${esc(m.title)}</b><span>${fmt(m.value)}${next ? " / " + fmt(next.goal) : " · terminé"}</span></div>
+        <p class="muted">${esc(m.desc)}</p>
+        <div class="mbar"><em style="width:${pct}%"></em></div>
+        <div class="tiers">${m.tiers.map((t) => {
+          const done = m.value >= t.goal;
+          const cls = t.claimed ? "claimed" : done ? "ready" : "locked";
+          return `<button class="tier ${cls}" data-m="${m.id}" data-t="${t.tier}" ${done && !t.claimed ? "" : "disabled"}>
+            <span class="tg">${fmt(t.goal)}</span><span class="tr">${t.claimed ? "✓" : "+" + fmt(t.reward)}${t.claimed ? "" : " " + TICKET}</span></button>`;
+        }).join("")}</div>
+      </div>`;
+    }).join("")}</div>`;
+
+  const claim = async (mission, tier) => {
+    const { data: gain, error: e } = await db.rpc("claim_mission", { p_mission: mission, p_tier: Number(tier) });
+    if (e) { toast(errText(e), true); return 0; }
+    return gain;
+  };
+  pane.querySelectorAll(".tier.ready").forEach((b) => b.addEventListener("click", async () => {
+    b.disabled = true;
+    const gain = await claim(b.dataset.m, b.dataset.t);
+    if (gain) toast(`+${fmt(gain)} tickets !`);
+    await syncLimits();
+    renderMissions();
+  }));
+  $("claim-all")?.addEventListener("click", async () => {
+    $("claim-all").disabled = true;
+    let sum = 0;
+    for (const b of pane.querySelectorAll(".tier.ready")) sum += await claim(b.dataset.m, b.dataset.t);
+    if (sum) toast(`+${fmt(sum)} tickets récupérés !`);
+    await syncLimits();
+    renderMissions();
+  });
+}
+
 async function refreshTradeBadge() {
   if (!state.userId) return;
   const { data } = await db.rpc("get_trades");

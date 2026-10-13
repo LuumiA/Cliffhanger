@@ -417,6 +417,7 @@ async function openBooster(theme) {
   syncLimits();
   loadOwned();
   loadLive();
+  if (typeof refreshMissionBadge === "function") refreshMissionBadge();
   startDeck(pulled);
 }
 
@@ -711,6 +712,7 @@ async function onSession(session) {
   await loadOwned();
   routeFromHash();
   if (typeof refreshTradeBadge === "function") refreshTradeBadge();
+  if (typeof pingLogin === "function") pingLogin();
   syncLimits();
   loadLive();
 }

@@ -68,3 +68,22 @@
   .tcards { gap: 8px; }
   .tside .tilt { --w: 30vw !important; }
 }
+
+/* ---------- Missions ---------- */
+.mission-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.mission-top p { margin: 4px 0 0; }
+.missions { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.mission { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.mhead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.mhead span { font: 700 .85rem "Space Mono", monospace; color: var(--gold); }
+.mission p { margin: 4px 0 10px; font-size: .85rem; }
+.mbar { height: 8px; border-radius: 99px; background: var(--panel-2); overflow: hidden; }
+.mbar em { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--red), var(--gold)); }
+.tiers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tier { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 62px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); font: inherit; cursor: default; }
+.tier .tg { font: 700 .85rem "Space Mono", monospace; }
+.tier .tr { display: inline-flex; align-items: center; gap: 4px; font-size: .75rem; }
+.tier.ready { border-color: var(--gold); color: var(--gold); cursor: pointer; box-shadow: 0 0 14px rgba(242,182,50,.25); animation: tierglow 1.8s ease-in-out infinite; }
+.tier.claimed { color: #5ee08a; border-color: rgba(94,224,138,.35); }
+@keyframes tierglow { 50% { box-shadow: 0 0 22px rgba(242,182,50,.45); } }
+@media (max-width: 700px) { .missions { grid-template-columns: 1fr; } }
