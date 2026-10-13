@@ -671,6 +671,19 @@ $("login").addEventListener("click", async () => {
   const { error } = await db.auth.signInWithPassword(credentials());
   if (error) $("auth-msg").textContent = error.message;
 });
+const authBack = () => location.origin + location.pathname;
+$("discord").addEventListener("click", async () => {
+  $("auth-msg").textContent = "";
+  const { error } = await db.auth.signInWithOAuth({ provider: "discord", options: { redirectTo: authBack() } });
+  if (error) $("auth-msg").textContent = error.message;
+});
+$("magic").addEventListener("click", async () => {
+  const email = $("email").value.trim();
+  if (!email) { $("auth-msg").textContent = "Entre ton email pour recevoir le lien."; return; }
+  $("auth-msg").textContent = "";
+  const { error } = await db.auth.signInWithOtp({ email, options: { emailRedirectTo: authBack() } });
+  $("auth-msg").textContent = error ? error.message : "Lien envoyé ! Ouvre ta boîte mail et clique dessus pour te connecter.";
+});
 $("signup").addEventListener("click", async () => {
   $("auth-msg").textContent = "";
   const { data, error } = await db.auth.signUp(credentials());

@@ -44,6 +44,13 @@ input[type=email], input[type=password], input[type=search], select {
 }
 input:focus, select:focus { outline: 2px solid var(--red); outline-offset: 1px; }
 .row { display: flex; gap: 8px; } .row .btn { flex: 1; }
+.link-btn { background: none; border: 0; color: var(--muted); font-size: .85rem; padding: 2px; }
+.link-btn:hover { color: var(--text); text-decoration: underline; }
+.or { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .8rem; }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.btn.discord { display: flex; align-items: center; justify-content: center; gap: 10px; background: #5865f2; border-color: #5865f2; color: #fff; }
+.btn.discord:hover { background: #4752c4; }
+.btn.discord svg { width: 20px; height: 20px; }
 #auth-msg { margin: 0; min-height: 1.2em; text-align: center; color: var(--gold); font-size: .9rem; }
 
 /* ---------- Navigation ---------- */
