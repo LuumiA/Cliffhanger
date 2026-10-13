@@ -115,6 +115,7 @@ function showView(name) {
   if (name === "series") renderSeries();
   if (name === "ranking") loadRanking();
   if (name === "market") loadMarket();
+  if (name === "missions") renderMissions();
   if (name === "profile") loadProfileView(state.viewing || state.username);
 }
 document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
@@ -691,7 +692,7 @@ $("signup").addEventListener("click", async () => {
   if (error) $("auth-msg").textContent = error.message;
   else if (!data.session) $("auth-msg").textContent = "Compte créé. Vérifie ta boîte mail pour confirmer, puis connecte-toi.";
 });
-$("logout").addEventListener("click", () => db.auth.signOut());
+$("me-btn").addEventListener("click", () => { state.viewing = null; history.replaceState(null, "", location.pathname); showView("profile"); });
 
 async function onSession(session) {
   state.userId = session?.user.id ?? null;
@@ -710,6 +711,7 @@ async function onSession(session) {
   showView("booster");
   await Promise.all([loadCards(), loadProfile(session.user.id)]);
   await loadOwned();
+  if (typeof refreshMeButton === "function") refreshMeButton();
   routeFromHash();
   if (typeof refreshTradeBadge === "function") refreshTradeBadge();
   if (typeof pingLogin === "function") pingLogin();

@@ -87,3 +87,6 @@
 .tier.claimed { color: #5ee08a; border-color: rgba(94,224,138,.35); }
 @keyframes tierglow { 50% { box-shadow: 0 0 22px rgba(242,182,50,.45); } }
 @media (max-width: 700px) { .missions { grid-template-columns: 1fr; } }
+
+.missions-page { margin-top: 22px; }
+.missions-page .box { margin-bottom: 18px; }

@@ -110,3 +110,9 @@
 
 /* Zoom : la perspective doit être sur le parent direct de la carte, sinon l inclinaison est invisible. */
 #modal-card { perspective: 900px; }
+
+/* Pastille d'avatar dans la barre du haut + déconnexion en bas du profil */
+.me-btn { background: none; border: 0; padding: 0; cursor: pointer; border-radius: 50%; line-height: 0; transition: transform .15s; }
+.me-btn:hover { transform: scale(1.06); }
+.me-btn:empty { width: 40px; height: 40px; background: var(--panel-2); border: 1px solid var(--line); }
+.profile-foot { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; justify-content: center; }

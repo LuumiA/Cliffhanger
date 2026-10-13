@@ -66,7 +66,7 @@ function setMarketTab(tab) {
   marketTab = tab;
   document.querySelectorAll("#market-tabs button").forEach((b) => b.classList.toggle("on", b.dataset.m === tab));
   document.querySelectorAll(".mpane").forEach((p) => (p.hidden = p.id !== `m-${tab}`));
-  ({ browse: renderBrowse, mine: renderMine, trades: renderTrades, missions: renderMissions })[tab]();
+  ({ browse: renderBrowse, mine: renderMine, trades: renderTrades })[tab]();
 }
 document.querySelectorAll("#market-tabs button").forEach((b) => b.addEventListener("click", () => setMarketTab(b.dataset.m)));
 
@@ -347,7 +347,7 @@ async function loadTradeList() {
 }
 
 let tradeN = 0, missionN = 0;
-function updateDot() { $("market-dot").hidden = tradeN + missionN === 0; }
+function updateDot() { $("market-dot").hidden = tradeN === 0; $("mission-dot").hidden = missionN === 0; }
 function setTradeBadge(n) {
   const b = $("trade-badge");
   tradeN = n;
@@ -356,10 +356,7 @@ function setTradeBadge(n) {
   updateDot();
 }
 function setMissionBadge(n) {
-  const b = $("mission-badge");
   missionN = n;
-  b.hidden = n === 0;
-  b.textContent = n;
   updateDot();
 }
 // ---------- Missions ----------
@@ -369,8 +366,10 @@ async function refreshMissionBadge() {
   const { data } = await db.rpc("get_missions");
   if (data) setMissionBadge(claimable(data));
 }
+let pingedFor = null;
 async function pingLogin() {
-  if (!state.userId) return;
+  if (!state.userId || pingedFor === state.userId) return;
+  pingedFor = state.userId;
   await db.rpc("ping_login");
   refreshMissionBadge();
 }

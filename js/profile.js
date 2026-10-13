@@ -90,6 +90,22 @@ async function loadProfileView(name) {
   if (!data) { body.innerHTML = '<p class="muted">Ce joueur n\'existe pas.</p>'; return; }
   state.profile = data;
   renderProfileView(data);
+  if (data.is_me) {
+    const foot = document.createElement("div");
+    foot.className = "profile-foot";
+    foot.innerHTML = '<button class="btn ghost" id="p-logout">Déconnexion</button>';
+    foot.querySelector("button").addEventListener("click", () => db.auth.signOut());
+    $("profile-body").appendChild(foot);
+    paintMeButton(data);
+  }
+}
+
+// Pastille ronde en haut à droite : l'avatar du joueur, un clic ouvre son profil.
+function paintMeButton(p) { $("me-btn").innerHTML = avatarHTML(p, 40); }
+async function refreshMeButton() {
+  if (!state.username) return;
+  const { data } = await db.rpc("get_public_profile", { p_username: state.username });
+  if (data) paintMeButton(data);
 }
 
 function copyProfileLink(p, btn) {
@@ -117,7 +133,6 @@ function renderProfileView(p) {
       ${p.bio ? `<p class="bio">${esc(p.bio)}</p>` : ""}
       <div class="profile-actions">
         ${p.is_me ? '<button class="btn small" id="p-edit">Personnaliser</button>' : ""}
-        ${p.is_me ? '<button class="btn ghost small" id="p-logout">Déconnexion</button>' : ""}
         ${p.is_me ? "" : '<button class="btn small" id="p-trade">Proposer un échange</button>'}
         <button class="btn ghost small" id="p-copy">${p.is_me ? "Copier mon lien" : "Copier le lien"}</button>
       </div>
@@ -130,7 +145,6 @@ function renderProfileView(p) {
     </div>`;
   body.replaceChildren(head);
   head.querySelector("#p-copy").addEventListener("click", (e) => copyProfileLink(p, e.currentTarget));
-  head.querySelector("#p-logout")?.addEventListener("click", () => $("logout").click());
   head.querySelector("#p-trade")?.addEventListener("click", () => startTradeWith(p.username));
   head.querySelector("#p-edit")?.addEventListener("click", () => openEditor(p));
 
