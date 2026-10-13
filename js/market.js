@@ -6,7 +6,8 @@ const fmt = (n) => Number(n).toLocaleString("fr-FR");
 const priceHTML = (n) => `<span class="price">${TICKET}${fmt(n)}</span>`;
 
 const ERRORS = {
-  pas_de_doublon: "Tu dois garder un exemplaire : seuls les doublons peuvent être vendus ou échangés.",
+  pas_de_doublon: "Seuls les doublons peuvent être échangés : tu dois en garder un exemplaire.",
+  pas_de_carte: "Tu ne possèdes pas cette carte.",
   doublon_indisponible: "Ce joueur n'a plus cette carte en double.",
   doublons_prives: "Ce joueur garde ses doublons privés.",
   joueur_introuvable: "Aucun joueur avec ce pseudo.",
@@ -94,7 +95,7 @@ async function renderBrowse() {
   const grid = $("mf-grid");
   const { data, error } = await db.rpc("get_listings", { p_search: mf.search || null, p_rarity: mf.rarity === "all" ? null : mf.rarity, p_sort: mf.sort });
   if (error) { grid.textContent = errText(error); return; }
-  if (!data.length) { grid.innerHTML = '<p class="muted center wide">Aucune annonce pour le moment. Mets tes doublons en vente depuis « Mes ventes » !</p>'; return; }
+  if (!data.length) { grid.innerHTML = '<p class="muted center wide">Aucune annonce pour le moment. Mets tes cartes en vente depuis « Mes ventes » !</p>'; return; }
   grid.replaceChildren(...data.map(listingTile));
 }
 
@@ -159,16 +160,16 @@ function tilePicker(container, items, selectedId, onPick, emptyText) {
 
 async function renderMine() {
   const pane = $("m-mine");
-  const dups = dupCards().map((card) => ({ card, qty: state.owned.get(card.id) }));
+  const dups = state.cards.filter((c) => state.owned.has(c.id)).sort((a, b) => RANK[b.rarity] - RANK[a.rarity] || a.name.localeCompare(b.name)).map((card) => ({ card, qty: state.owned.get(card.id) }));
   pane.innerHTML = `
     <div class="box">
-      <div class="box-head"><b>Mettre un doublon en vente</b><span>frais de ${econ.fee_percent} %</span></div>
+      <div class="box-head"><b>Mettre une carte en vente</b><span>frais de ${econ.fee_percent} %</span></div>
       <div id="sell-pick"></div>
       <div id="sell-form" class="sellform" hidden></div>
     </div>
     <div class="section-head"><h2>Mes annonces</h2></div>
     <div id="my-listings" class="mgrid"><p class="muted">Chargement…</p></div>`;
-  tilePicker($("sell-pick"), dups, () => sellCard?.id, (c) => { sellCard = c; renderSellForm(); }, "Tu n'as aucun doublon pour l'instant. Ouvre des boosters !");
+  tilePicker($("sell-pick"), dups, () => sellCard?.id, (c) => { sellCard = c; renderSellForm(); }, "Tu n'as aucune carte pour l'instant. Ouvre des boosters !");
   if (sellCard && !dups.some((d) => d.card.id === sellCard.id)) sellCard = null;
   renderSellForm();
 
@@ -378,8 +379,8 @@ function renderShop() {
       </div>
       <div class="box">
         <div class="box-head"><b>Gagner des tickets</b></div>
-        <p class="muted">Les tickets viennent des autres joueurs : vends tes doublons sur le marché. Tu gardes toujours un exemplaire de chaque carte, seuls les doublons sont en vente. Le prix est libre, et ${econ.fee_percent} % de frais sont prélevés sur chaque vente.</p>
-        <button class="btn ghost" id="go-sell">Mettre un doublon en vente</button>
+        <p class="muted">Les tickets viennent des autres joueurs : vends tes cartes sur le marché (même celles que tu n'as qu'en un exemplaire). Le prix est libre, et ${econ.fee_percent} % de frais sont prélevés sur chaque vente.</p>
+        <button class="btn ghost" id="go-sell">Mettre une carte en vente</button>
       </div>
     </div>`;
   $("go-sell").addEventListener("click", () => setMarketTab("mine"));
@@ -395,7 +396,7 @@ function renderShop() {
 
 // ---------- Actions dans la fenêtre de zoom d'une carte ----------
 function addModalActions(card, qty, holder) {
-  if (qty < 2) return;
+  if (qty < 1) return;
   const bar = document.createElement("div");
   bar.className = "modal-actions";
   bar.innerHTML = `<button class="btn small" id="ma-sell">Mettre en vente</button>`;
