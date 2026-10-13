@@ -52,7 +52,7 @@ let econ = null;
 async function loadEconomy() {
   if (econ) return;
   const { data } = await db.rpc("get_economy");
-  econ = data ?? { suggested: {}, booster_price: 300, fee_percent: 5 };
+  econ = data ?? { suggested: {}, booster_price: 100, fee_percent: 5 };
 }
 const suggested = (rarity) => econ?.suggested?.[rarity] ?? 10;
 const dupCards = () => state.cards.filter((c) => (state.owned.get(c.id) ?? 0) > 1).sort((a, b) => RANK[b.rarity] - RANK[a.rarity] || a.name.localeCompare(b.name));

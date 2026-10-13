@@ -16,3 +16,6 @@ begin
   insert into listings (seller_id, card_id, price) values (uid, p_card, p_price) returning id into new_id;
   return new_id;
 end; $$;
+
+-- Boutique : un booster coûte 100 tickets.
+create or replace function public.booster_price() returns int language sql immutable as $$ select 100 $$;
