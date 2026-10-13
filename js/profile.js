@@ -118,6 +118,7 @@ function renderProfileView(p) {
       <div class="profile-actions">
         ${p.is_me ? '<button class="btn small" id="p-edit">Personnaliser</button>' : ""}
         ${p.is_me ? '<button class="btn ghost small" id="p-logout">Déconnexion</button>' : ""}
+        ${p.is_me ? "" : '<button class="btn small" id="p-trade">Proposer un échange</button>'}
         <button class="btn ghost small" id="p-copy">${p.is_me ? "Copier mon lien" : "Copier le lien"}</button>
       </div>
     </div>
@@ -130,6 +131,7 @@ function renderProfileView(p) {
   body.replaceChildren(head);
   head.querySelector("#p-copy").addEventListener("click", (e) => copyProfileLink(p, e.currentTarget));
   head.querySelector("#p-logout")?.addEventListener("click", () => $("logout").click());
+  head.querySelector("#p-trade")?.addEventListener("click", () => startTradeWith(p.username));
   head.querySelector("#p-edit")?.addEventListener("click", () => openEditor(p));
 
   if (p.restricted) {
@@ -157,7 +159,7 @@ function section(title, eyebrow, extra = "") {
 
 function cardTile(c, width) {
   const el = makeCard(c, { qty: c.qty, width });
-  el.addEventListener("click", () => openModal(c, c.qty));
+  el.addEventListener("click", () => openModal(c, c.qty, !!state.profile?.is_me));
   return el;
 }
 

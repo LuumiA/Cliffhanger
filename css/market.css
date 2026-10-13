@@ -1,0 +1,70 @@
+/* Marché entre joueurs, échanges, boutique, et logo de la monnaie (ticket). */
+
+/* ---------- Logo de la monnaie : un ticket de cinéma doré ---------- */
+.tk { width: 15px; height: 15px; flex: none; fill: rgba(242,182,50,.14); stroke: #f2b632; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; vertical-align: -2px; }
+.price { display: inline-flex; align-items: center; gap: 6px; font: 700 .95rem "Space Mono", monospace; color: var(--gold); }
+
+/* Pastille rouge / compteur sur les onglets */
+.tab { position: relative; }
+.dot { position: absolute; top: 5px; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: var(--red); box-shadow: 0 0 8px var(--red); }
+.badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 99px; background: var(--red); color: #fff; font: 700 .68rem "Space Mono", monospace; font-style: normal; }
+
+/* ---------- Notifications ---------- */
+.toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 120; max-width: min(92vw, 480px); padding: 12px 20px; border-radius: 12px; background: var(--panel-2); border: 1px solid var(--gold); color: var(--text); font-weight: 600; box-shadow: 0 14px 40px rgba(0,0,0,.6); animation: fade .25s; }
+.toast.bad { border-color: var(--red); }
+.toast.out { opacity: 0; transition: opacity .4s; }
+
+/* ---------- Page ---------- */
+#view-market #market-tabs { margin: 22px 0 20px; }
+.mpane h4 { margin: 20px 0 10px; font: 700 1rem var(--body); }
+.mpane .section-head { margin-top: 36px; }
+.mpane .box { margin-top: 0; margin-bottom: 18px; }
+.wide { grid-column: 1 / -1; }
+
+.mgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 26px 18px; justify-items: center; align-items: start; perspective: 1000px; }
+.listing { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+.listing.sold { opacity: .7; }
+.linfo { width: min(100%, 190px); display: flex; flex-direction: column; gap: 8px; }
+.lrow { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.seller { color: var(--muted); font-size: .78rem; max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.linfo .btn { width: 100%; }
+
+.sellform { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.sf-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
+.sf-row label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .9rem; }
+.sf-row input[type=number], .sf-row input[type=text] { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font: 600 .95rem var(--body); width: 140px; }
+.sf-row input[type=text] { width: min(260px, 100%); }
+.pk-tile em { position: absolute; top: 4px; right: 4px; z-index: 2; background: rgba(0,0,0,.75); border-radius: 99px; padding: 1px 7px; font: 700 .68rem "Space Mono", monospace; font-style: normal; }
+
+/* ---------- Échanges ---------- */
+.trade { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; margin-bottom: 12px; }
+.trade.accepted { border-color: rgba(94,224,138,.4); }
+.trade.declined, .trade.cancelled { opacity: .65; }
+.thead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.tstatus { font: .72rem "Space Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.trade.pending .tstatus { color: var(--gold); }
+.tcards { display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap; }
+.tside { display: flex; flex-direction: column; align-items: center; gap: 6px; perspective: 800px; }
+.tside small { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; }
+.tarrow { font-size: 1.8rem; color: var(--muted); }
+.tact { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+
+/* ---------- Boutique ---------- */
+.shop { display: grid; gap: 18px; max-width: 720px; }
+.shop-card { display: flex; gap: 20px; align-items: center; padding: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; }
+.shop-art { width: 92px; height: 120px; flex: none; display: grid; place-items: center; font-size: 2.6rem; border-radius: 12px; background: linear-gradient(160deg, #5a0f1a, #14090c); border: 2px solid rgba(255,255,255,.14); }
+.shop-card h3 { margin: 0 0 4px; font: 1.6rem var(--display); letter-spacing: .05em; }
+.shop-card p { margin: 0 0 6px; }
+
+/* ---------- Actions sous la carte zoomée ---------- */
+#modal-card { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.modal-actions { display: flex; gap: 10px; }
+
+@media (max-width: 700px) {
+  .mgrid { grid-template-columns: repeat(2, 1fr); gap: 20px 10px; }
+  .listing .tilt { --w: 42vw !important; }
+  .dot { right: 22%; }
+  .shop-card { flex-direction: column; text-align: center; }
+  .tcards { gap: 8px; }
+  .tside .tilt { --w: 30vw !important; }
+}

@@ -113,6 +113,7 @@ function showView(name) {
   if (name === "collection") renderCollection();
   if (name === "series") renderSeries();
   if (name === "ranking") loadRanking();
+  if (name === "market") loadMarket();
   if (name === "profile") loadProfileView(state.viewing || state.username);
 }
 document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
@@ -641,11 +642,13 @@ async function loadRanking() {
 }
 
 // ---------- Zoom ----------
-function openModal(c, qty = state.owned.get(c.id)) {
-  $("modal-card").replaceChildren(makeCard(c, { qty, tilt: 4, width: Math.min(340, window.innerWidth - 40) }));
+function openModal(c, qty = state.owned.get(c.id), own = true) {
+  const holder = $("modal-card");
+  holder.replaceChildren(makeCard(c, { qty, tilt: 4, width: Math.min(340, window.innerWidth - 40) }));
+  if (own && typeof addModalActions === "function") addModalActions(c, qty, holder);
   $("modal").hidden = false;
 }
-$("modal").addEventListener("click", (e) => { if (!e.target.closest(".tilt")) $("modal").hidden = true; });
+$("modal").addEventListener("click", (e) => { if (!e.target.closest(".tilt, .modal-actions")) $("modal").hidden = true; });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("modal").hidden = true; });
 
 // ---------- Connexion ----------
@@ -682,6 +685,7 @@ async function onSession(session) {
   await Promise.all([loadCards(), loadProfile(session.user.id)]);
   await loadOwned();
   routeFromHash();
+  if (typeof refreshTradeBadge === "function") refreshTradeBadge();
   syncLimits();
   loadLive();
 }

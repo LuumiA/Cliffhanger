@@ -171,6 +171,5 @@
 .sbar i { display: block; height: 100%; width: 0; background: var(--red); transition: width .6s linear; }
 .status.empty b#status-stock { color: var(--red); }
 .bolt { width: 14px; height: 14px; fill: #ff8a3d; }
-.gem { width: 14px; height: 14px; fill: none; stroke: #4cc9f0; stroke-width: 2; stroke-linejoin: round; }
 .ssep { width: 1px; height: 16px; background: var(--line); margin: 0 4px; }
 @media (max-width: 380px) { .status { padding: 6px 10px; gap: 6px; font-size: .78rem; } .ssep { margin: 0 2px; } }

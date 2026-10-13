@@ -8,11 +8,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=1791911259501">
-  <link rel="stylesheet" href="css/home.css?v=1791911259501">
-  <link rel="stylesheet" href="css/profile.css?v=1791911259501">
-  <link rel="stylesheet" href="css/cards.css?v=1791911259501">
-  <link rel="stylesheet" href="css/mobile.css?v=1791911259501">
+  <link rel="stylesheet" href="css/style.css?v=1791911920">
+  <link rel="stylesheet" href="css/home.css?v=1791911920">
+  <link rel="stylesheet" href="css/profile.css?v=1791911920">
+  <link rel="stylesheet" href="css/cards.css?v=1791911920">
+  <link rel="stylesheet" href="css/market.css?v=1791911920">
+  <link rel="stylesheet" href="css/mobile.css?v=1791911920">
 </head>
 <body>
   <div class="grain"></div>
@@ -41,6 +42,7 @@
           <button class="tab active" data-view="booster"><svg class="ti" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M9 8h6M9 12h6"/></svg><span>Boosters</span></button>
           <button class="tab" data-view="collection"><svg class="ti" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Collection</span></button>
           <button class="tab" data-view="series"><svg class="ti" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M9 3l3 4 3-4M8 22h8"/></svg><span>Séries</span></button>
+          <button class="tab" data-view="market"><svg class="ti" viewBox="0 0 24 24"><path d="M4 9h16l-1.2-4.6a1 1 0 0 0-1-.4H6.2a1 1 0 0 0-1 .4zM5 9v10h14V9M9 19v-5h6v5"/></svg><span>Marché</span><i class="dot" id="market-dot" hidden></i></button>
           <button class="tab" data-view="ranking"><svg class="ti" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H4v1a3 3 0 0 0 4 3M16 6h4v1a3 3 0 0 1-4 3M12 13v4M8 20h8"/></svg><span>Classement</span></button>
           <button class="tab" data-view="profile"><svg class="ti" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Profil</span></button>
         </div>
@@ -50,7 +52,7 @@
             <b id="status-stock">0/20</b>
             <svg class="bolt" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
             <span class="ssep"></span>
-            <svg class="gem" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 8 10-8 10-8-10z"/></svg>
+            <svg class="tk" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 2"/></svg>
             <b id="status-coins">0</b>
           </div>
           <button id="logout" class="btn ghost small">Déconnexion</button>
@@ -120,6 +122,23 @@
         <h2 class="title">Les séries</h2>
         <p class="sub">Complète chaque série pour débloquer le générique de fin.</p>
         <div id="series-grid" class="series-grid"></div>
+      </section>
+
+      <!-- ===== Marché ===== -->
+      <section id="view-market" class="view" hidden>
+        <p class="eyebrow">Marché</p>
+        <h2 class="title">Marché</h2>
+        <p class="sub">Vends, achète et échange tes doublons. Les tickets servent à tout.</p>
+        <div class="seg wide" id="market-tabs">
+          <button data-m="browse" class="on">Marché</button>
+          <button data-m="mine">Mes ventes</button>
+          <button data-m="trades">Échanges <i class="badge" id="trade-badge" hidden></i></button>
+          <button data-m="shop">Boutique</button>
+        </div>
+        <div id="m-browse" class="mpane"></div>
+        <div id="m-mine" class="mpane" hidden></div>
+        <div id="m-trades" class="mpane" hidden></div>
+        <div id="m-shop" class="mpane" hidden></div>
       </section>
 
       <!-- ===== Classement ===== -->
@@ -200,9 +219,10 @@
   <div id="flash"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-  <script src="js/config.js?v=1791911259501"></script>
-  <script src="js/rarity.js?v=1791911259501"></script>
-  <script src="js/main.js?v=1791911259501"></script>
-  <script src="js/profile.js?v=1791911259501"></script>
+  <script src="js/config.js?v=1791911920"></script>
+  <script src="js/rarity.js?v=1791911920"></script>
+  <script src="js/main.js?v=1791911920"></script>
+  <script src="js/profile.js?v=1791911920"></script>
+  <script src="js/market.js?v=1791911920"></script>
 </body>
 </html>
