@@ -164,3 +164,13 @@
 #deck img { pointer-events: none; -webkit-user-drag: none; }
 .deck-card { position: absolute; left: 50%; top: 0; transition: transform .38s cubic-bezier(.2,.9,.3,1), opacity .38s; will-change: transform; }
 .deck-card .tilt { cursor: inherit; }
+
+/* ===== Pastille du haut : stock de boosters à gauche, monnaie à droite ===== */
+.status { display: flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 99px; background: var(--panel); border: 1px solid var(--line); font: 700 .85rem "Space Mono", monospace; cursor: default; }
+.sbar { width: 26px; height: 6px; border-radius: 99px; background: var(--panel-2); overflow: hidden; }
+.sbar i { display: block; height: 100%; width: 0; background: var(--red); transition: width .6s linear; }
+.status.empty b#status-stock { color: var(--red); }
+.bolt { width: 14px; height: 14px; fill: #ff8a3d; }
+.gem { width: 14px; height: 14px; fill: none; stroke: #4cc9f0; stroke-width: 2; stroke-linejoin: round; }
+.ssep { width: 1px; height: 16px; background: var(--line); margin: 0 4px; }
+@media (max-width: 380px) { .status { padding: 6px 10px; gap: 6px; font-size: .78rem; } .ssep { margin: 0 2px; } }

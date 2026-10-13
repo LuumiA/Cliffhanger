@@ -45,7 +45,14 @@
           <button class="tab" data-view="profile"><svg class="ti" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Profil</span></button>
         </div>
         <div class="user">
-          <span class="pill" id="nav-cooldown">Prêt</span>
+          <div class="status" id="status">
+            <span class="sbar"><i id="status-bar"></i></span>
+            <b id="status-stock">0/20</b>
+            <svg class="bolt" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+            <span class="ssep"></span>
+            <svg class="gem" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 8 10-8 10-8-10z"/></svg>
+            <b id="status-coins">0</b>
+          </div>
           <button id="logout" class="btn ghost small">Déconnexion</button>
         </div>
       </div>

@@ -6,7 +6,6 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const RANK = Object.fromEntries(RARITIES.map((r, i) => [r.id, i]));
 const rarityOf = (id) => RARITIES.find((r) => r.id === id);
 const TOTAL_WEIGHT = RARITIES.reduce((s, r) => s + r.weight, 0);
-const COOLDOWN = 10 * 60;
 
 // Thèmes de booster (l'ordre est celui de l'affichage). Les cartes portent les clés dans `themes`.
 const THEMES = [
@@ -27,13 +26,15 @@ const state = {
   owned: new Map(), // card_id -> quantité
   filters: { rarity: "all", show: "all", theme: "all", search: "", missing: true },
   selected: null, // thème du booster choisi (null = Mix)
-  bonus: 0, // boosters bonus restants (ouvrables sans attendre le cooldown)
+  stock: 0, // boosters en stock (le serveur fait foi)
+  cap: 20, // stock maximum
+  nextIn: null, // secondes avant le prochain booster (null = stock plein)
+  coins: 0, // monnaie du jeu
   userId: null,
   isAdmin: false, // compte admin : pas de cooldown (le serveur le vérifie aussi)
   username: "",
   memberSince: null,
   cdTimer: null,
-  cdLeft: 0,
   opening: false,
 };
 
@@ -122,59 +123,71 @@ document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () 
 $("home-link").addEventListener("click", () => { $("stage").hidden = true; $("modal").hidden = true; showView("booster"); });
 
 // ---------- Cooldown (affichage : la vraie vérification est côté serveur) ----------
-const canOpen = () => state.isAdmin || state.cdLeft <= 0 || state.bonus > 0;
+const STEP = 10 * 60; // un booster toutes les 10 minutes
+const canOpen = () => state.isAdmin || state.stock > 0;
 
 function cdValue() {
-  if (state.isAdmin) return "∞";
-  if (state.cdLeft > 0 && state.bonus === 0) return mmss(state.cdLeft);
-  return "Prêt";
+  return state.isAdmin ? "∞" : `${state.stock}/${state.cap}`;
 }
 function cdLabel() {
   if (state.isAdmin) return "boosters illimités (admin)";
-  if (state.bonus > 0) return `${state.bonus} booster${state.bonus > 1 ? "s" : ""} bonus${state.cdLeft > 0 ? " · prochain gratuit " + mmss(state.cdLeft) : ""}`;
-  return "prochain booster gratuit";
+  if (state.nextIn === null) return "boosters en stock · stock plein";
+  return `boosters en stock · prochain dans ${mmss(state.nextIn)}`;
 }
+const stepProgress = () => (state.isAdmin || state.nextIn === null ? 100 : ((STEP - state.nextIn) / STEP) * 100);
 
+// Affichage seulement : la vraie vérification est faite par le serveur.
 function renderCooldown() {
-  const left = state.cdLeft, locked = !canOpen();
-  const pill = $("nav-cooldown");
-  pill.textContent = state.isAdmin ? "Admin · illimité" : locked ? mmss(left) : state.bonus > 0 ? `Prêt · ${state.bonus} bonus` : "Prêt";
-  pill.classList.toggle("ready", !locked);
+  const locked = !canOpen();
+  $("status-stock").textContent = cdValue();
+  $("status-bar").style.width = `${stepProgress()}%`;
+  $("status-coins").textContent = state.coins.toLocaleString("fr-FR");
+  $("status").title = state.isAdmin ? "Boosters illimités" : state.nextIn === null ? "Stock plein" : `Prochain booster dans ${mmss(state.nextIn)}`;
+  $("status").classList.toggle("empty", locked);
 
   const stat = $("stat-cd"), bar = $("stat-cd-bar"), lab = $("stat-cd-label");
   if (stat) stat.textContent = cdValue();
   if (lab) lab.textContent = cdLabel();
-  if (bar) bar.style.width = `${left > 0 && !state.isAdmin ? ((COOLDOWN - left) / COOLDOWN) * 100 : 100}%`;
+  if (bar) bar.style.width = `${stepProgress()}%`;
 
   const btn = $("panel-open"), cd = $("panel-cd");
   if (btn) btn.disabled = locked || state.opening;
-  if (cd) cd.textContent = locked ? `Prochain booster dans ${mmss(left)}` : state.bonus > 0 && left > 0 && !state.isAdmin ? `Booster bonus : ${state.bonus} restant${state.bonus > 1 ? "s" : ""}` : "";
+  if (cd) cd.textContent = locked ? `Plus de booster : prochain dans ${mmss(state.nextIn ?? 0)}` : "";
   const hero = $("hero-open");
   if (hero) hero.disabled = locked || state.opening;
 }
 
-function startCooldown(seconds) {
+// Le décompte tourne côté navigateur ; à zéro on redemande le stock au serveur.
+function startTicker() {
   clearInterval(state.cdTimer);
-  if (state.isAdmin) seconds = 0;
-  state.cdLeft = seconds;
-  renderCooldown();
   state.cdTimer = setInterval(() => {
-    state.cdLeft = Math.max(0, state.cdLeft - 1);
+    if (state.nextIn === null) return;
+    state.nextIn = Math.max(0, state.nextIn - 1);
     renderCooldown();
-    if (state.cdLeft === 0) clearInterval(state.cdTimer);
+    if (state.nextIn === 0) { clearInterval(state.cdTimer); syncLimits(); }
   }, 1000);
 }
 
-// Relit auprès du serveur le cooldown et les boosters bonus (après une ouverture, ou à la connexion).
+// Le serveur a refusé : plus de booster en stock.
+function startCooldown(seconds) {
+  state.stock = 0;
+  state.nextIn = seconds;
+  renderCooldown();
+  startTicker();
+}
+
+// Relit le stock, le délai avant le prochain booster et la monnaie auprès du serveur.
 async function syncLimits() {
   if (!state.userId) return;
-  const [log, prof] = await Promise.all([
-    db.from("booster_log").select("last_opened").eq("user_id", state.userId).maybeSingle(),
-    db.from("profiles").select("bonus_boosters").eq("id", state.userId).maybeSingle(),
-  ]);
-  if (prof.data) state.bonus = prof.data.bonus_boosters ?? 0;
-  const left = log.data ? Math.ceil((new Date(log.data.last_opened).getTime() + COOLDOWN * 1000 - Date.now()) / 1000) : 0;
-  startCooldown(Math.max(0, left));
+  const { data, error } = await db.rpc("get_booster_status");
+  if (error) return console.error(error);
+  state.stock = data.stock;
+  state.cap = data.cap;
+  state.nextIn = data.next_in;
+  state.coins = data.coins ?? 0;
+  state.isAdmin = data.admin;
+  renderCooldown();
+  startTicker();
 }
 
 // ---------- Données ----------
@@ -228,9 +241,8 @@ function renderStats() {
   const done = all.filter((s) => state.cards.filter((c) => c.show === s).every((c) => state.owned.has(c.id))).length;
   const dups = [...state.owned.values()].reduce((s, q) => s + (q - 1), 0);
   const top = state.cards.filter((c) => state.owned.has(c.id) && RANK[c.rarity] >= RANK.culte).length;
-  const locked = state.cdLeft > 0;
   $("stats").innerHTML = `
-    <div class="stat"><b id="stat-cd">${cdValue()}</b><span id="stat-cd-label">${cdLabel()}</span><div class="mini"><i id="stat-cd-bar" style="--c:var(--gold);width:${locked ? ((COOLDOWN - state.cdLeft) / COOLDOWN) * 100 : 100}%"></i></div></div>
+    <div class="stat"><b id="stat-cd">${cdValue()}</b><span id="stat-cd-label">${cdLabel()}</span><div class="mini"><i id="stat-cd-bar" style="--c:var(--gold);width:${stepProgress()}%"></i></div></div>
     <div class="stat"><b>${pctText(pct)} %</b><span>collection · ${n} / ${total} cartes</span><div class="mini"><i style="--c:#3f8ef0;width:${pct}%"></i></div></div>
     <div class="stat"><b>${done}/${all.length}</b><span>séries complètes</span><div class="mini"><i style="--c:#5ee08a;width:${all.length ? (done / all.length) * 100 : 0}%"></i></div></div>
     <div class="stat"><b>${dups}</b><span>doublons à échanger</span></div>
@@ -659,8 +671,9 @@ async function onSession(session) {
   if (!session) {
     clearInterval(state.cdTimer);
     state.owned = new Map();
-    state.cdLeft = 0;
-    state.bonus = 0;
+    state.stock = 0;
+    state.nextIn = null;
+    state.coins = 0;
     state.userId = null;
     $("stage").hidden = true;
     return;
