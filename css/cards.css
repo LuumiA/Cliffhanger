@@ -1,0 +1,132 @@
+/* Apparence des cartes : cadre en dégradé, fond teinté par la rareté, et un effet propre à chaque rareté. */
+
+/* ---------- Cadre et fond ---------- */
+.card {
+  padding: 4px;
+  background: linear-gradient(145deg,
+    color-mix(in srgb, var(--accent), white 35%) 0%,
+    var(--accent) 40%,
+    color-mix(in srgb, var(--accent) 40%, #0d0b10) 100%);
+  box-shadow: 0 14px 34px rgba(0,0,0,.6), 0 0 22px -8px var(--accent);
+  transition: box-shadow .3s;
+}
+.card-in {
+  background: linear-gradient(170deg,
+    color-mix(in srgb, var(--accent) 30%, #15121b) 0%,
+    #121016 52%,
+    color-mix(in srgb, var(--accent) 16%, #0d0b10) 100%);
+}
+.c-top { background: rgba(0,0,0,.32); }
+.c-stats { background: rgba(0,0,0,.4); border-top: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); }
+.art::after { background: linear-gradient(transparent, color-mix(in srgb, var(--accent) 14%, #0a080d) 96%); }
+
+/* La carte se soulève un peu au survol */
+.tilt { transform: translateY(var(--lift, 0px)) rotateX(var(--rx)) rotateY(var(--ry)); }
+.tilt:hover { --lift: -5px; }
+
+/* ---------- Couches d'effet (communes) ---------- */
+.foil, .glare { position: absolute; inset: 0; border-radius: 14px; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity .25s; }
+.tilt:hover .foil, .tilt:hover .glare { opacity: 1; }
+
+/* Reflet doux qui suit la souris : toutes les raretés */
+.glare { background: radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,.16), transparent 55%); mix-blend-mode: soft-light; }
+
+/* Bande de lumière qui traverse la carte (le mouvement est lancé par chaque rareté) */
+.foil::before {
+  content: ""; position: absolute; inset: -50%; opacity: 0;
+  background: linear-gradient(105deg, transparent 43%, rgba(255,255,255,.7) 50%, transparent 57%);
+  transform: translateX(-70%);
+}
+@keyframes shine { from { transform: translateX(-70%); } to { transform: translateX(70%); } }
+
+/* Éclats en forme d'étoile (3 étoiles : une croix de lumière + un point brillant) */
+.foil::after {
+  content: ""; position: absolute; inset: 0; opacity: 0; background-repeat: no-repeat;
+  background-image:
+    linear-gradient(transparent calc(50% - .75px), rgba(255,255,255,.95) calc(50% - .75px) calc(50% + .75px), transparent calc(50% + .75px)),
+    linear-gradient(90deg, transparent calc(50% - .75px), rgba(255,255,255,.95) calc(50% - .75px) calc(50% + .75px), transparent calc(50% + .75px)),
+    radial-gradient(circle, #fff 0 2px, rgba(255,255,255,.4) 3px, transparent 9px),
+    linear-gradient(transparent calc(50% - .75px), rgba(255,255,255,.95) calc(50% - .75px) calc(50% + .75px), transparent calc(50% + .75px)),
+    linear-gradient(90deg, transparent calc(50% - .75px), rgba(255,255,255,.95) calc(50% - .75px) calc(50% + .75px), transparent calc(50% + .75px)),
+    radial-gradient(circle, #fff 0 2px, rgba(255,255,255,.4) 3px, transparent 9px),
+    linear-gradient(transparent calc(50% - .75px), rgba(255,255,255,.95) calc(50% - .75px) calc(50% + .75px), transparent calc(50% + .75px)),
+    linear-gradient(90deg, transparent calc(50% - .75px), rgba(255,255,255,.95) calc(50% - .75px) calc(50% + .75px), transparent calc(50% + .75px)),
+    radial-gradient(circle, #fff 0 2px, rgba(255,255,255,.4) 3px, transparent 9px);
+  background-size: 26px 26px, 26px 26px, 26px 26px, 18px 18px, 18px 18px, 18px 18px, 32px 32px, 32px 32px, 32px 32px;
+  background-position: 20% 22%, 20% 22%, 20% 22%, 80% 16%, 80% 16%, 80% 16%, 66% 60%, 66% 60%, 66% 60%;
+}
+@keyframes twinkle { 0%, 100% { opacity: .1; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.03); } }
+
+/* ---------- Commune : rien de plus que la légère élévation ---------- */
+
+/* ---------- Peu commune : reflet vert ---------- */
+.rarity-second .glare { background: radial-gradient(circle at var(--mx) var(--my), rgba(190,255,210,.28), transparent 55%); }
+
+/* ---------- Rare : reflet bleu, halo bleu, une bande de lumière à chaque survol ---------- */
+.rarity-principal .glare { background: radial-gradient(circle at var(--mx) var(--my), rgba(170,210,255,.34), transparent 55%); }
+.rarity-principal:hover .card { box-shadow: 0 14px 34px rgba(0,0,0,.6), 0 0 32px -2px var(--accent); }
+.tilt.rarity-principal:hover .foil::before { opacity: .6; animation: shine 1s ease-out 1; }
+
+/* ---------- Épique : bandes holographiques violettes qui suivent la souris, lumière en boucle ---------- */
+.rarity-culte .foil {
+  opacity: .35;
+  background:
+    repeating-linear-gradient(115deg, transparent 0 16px, rgba(190,140,255,.2) 16px 24px, transparent 24px 40px),
+    linear-gradient(115deg, transparent 15%, rgba(150,90,255,.3) 40%, rgba(255,120,210,.2) 58%, rgba(110,150,255,.28) 74%, transparent 92%);
+  background-size: 100% 100%, 240% 240%;
+  background-position: 0 0, var(--mx) var(--my);
+  mix-blend-mode: screen;
+}
+.rarity-culte:hover .card { box-shadow: 0 14px 34px rgba(0,0,0,.6), 0 0 40px 0 var(--accent); }
+.tilt.rarity-culte .foil::before { opacity: .45; animation: shine 5s ease-in-out infinite; }
+.tilt.rarity-culte:hover .foil::before { opacity: .65; animation-duration: 2.2s; }
+.tilt.rarity-culte:hover .foil::after { opacity: .55; animation: twinkle 2.2s ease-in-out infinite; }
+
+/* ---------- Légendaire : feuille d'or rayée, éclats, halo qui pulse, scintille même au repos ---------- */
+.rarity-iconique .card { animation: gold 2.8s ease-in-out infinite; }
+@keyframes gold { 50% { box-shadow: 0 14px 34px rgba(0,0,0,.6), 0 0 40px 3px var(--accent); } }
+.rarity-iconique .foil {
+  opacity: .6;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 5px, rgba(255,226,140,.2) 5px 7px),
+    linear-gradient(120deg, transparent 8%, rgba(255,205,90,.4) 28%, rgba(255,246,205,.55) 44%, rgba(255,190,70,.4) 60%, transparent 82%);
+  background-size: 100% 100%, 250% 250%;
+  background-position: 0 0, var(--mx) var(--my);
+  mix-blend-mode: screen;
+}
+.tilt.rarity-iconique .foil::before { opacity: .7; animation: shine 3.6s ease-in-out infinite; }
+.tilt.rarity-iconique .foil::after { opacity: .6; animation: twinkle 2.6s ease-in-out infinite; }
+.tilt.rarity-iconique:hover .foil::before { animation-duration: 1.6s; }
+.tilt.rarity-iconique:hover .foil::after { opacity: 1; animation-duration: 1.4s; }
+.rarity-iconique:hover .card { animation-duration: 1.3s; }
+
+/* ---------- Cliffhanger : bordure qui coule, holographie rose / or / violet, éclats, grand halo ---------- */
+.rarity-cliffhanger .card {
+  background: conic-gradient(from var(--ang, 0deg), #ff4d8d, #ffb347, #9b5de5, #ff4d8d);
+  animation: spin 5s linear infinite, cliff 2.2s ease-in-out infinite;
+}
+@keyframes cliff { 50% { box-shadow: 0 14px 34px rgba(0,0,0,.6), 0 0 54px 6px rgba(255,77,141,.7); } }
+.rarity-cliffhanger .foil {
+  opacity: .7;
+  background:
+    repeating-linear-gradient(115deg, transparent 0 12px, rgba(255,255,255,.14) 12px 16px, transparent 16px 30px),
+    linear-gradient(115deg, transparent 8%, rgba(255,77,141,.5) 28%, rgba(255,200,90,.5) 48%, rgba(155,93,229,.5) 68%, rgba(80,210,255,.35) 84%, transparent 96%);
+  background-size: 100% 100%, 230% 230%;
+  background-position: 0 0, var(--mx) var(--my);
+  mix-blend-mode: screen;
+}
+.tilt.rarity-cliffhanger .foil::before { opacity: .85; animation: shine 2.6s ease-in-out infinite; }
+.tilt.rarity-cliffhanger .foil::after { opacity: .8; animation: twinkle 1.8s ease-in-out infinite; }
+.tilt.rarity-cliffhanger:hover .foil::before { animation-duration: 1.2s; }
+.tilt.rarity-cliffhanger:hover .foil::after { opacity: 1; animation-duration: 1.1s; }
+.rarity-cliffhanger:hover .card { animation-duration: 2.2s, 1s; }
+
+/* ---------- Carte pas encore obtenue : aucun effet ---------- */
+.locked .card-in { background: #121016; }
+.locked .card { background: #1a171d; animation: none; box-shadow: none; }
+.locked .foil, .locked .glare { display: none; }
+.locked:hover { --lift: 0px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .foil::before, .foil::after { animation: none !important; }
+}

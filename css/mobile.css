@@ -1,0 +1,97 @@
+/* Cartes adaptatives + version mobile. Chargé en dernier. */
+html { -webkit-tap-highlight-color: transparent; }
+body { overflow-x: hidden; }
+.ti { display: none; }
+
+/* ---------- Carte : le texte suit la largeur de la carte (1cqw = 1 % de sa largeur) ---------- */
+.card { container-type: inline-size; }
+.card-in { font-size: 5.9cqw; }
+.c-top { font-size: .87em; padding: .6em .8em; }
+.initials { font-size: 4.9em; }
+.qty { font-size: 1em; top: .6em; right: .6em; padding: .2em .7em; }
+.c-name { bottom: 4.7em; padding: 0 .9em; }
+.c-name b { font-size: 1.8em; }
+.c-name small { font-size: .9em; }
+.c-stats div { padding: .45em 0 .35em; }
+.c-stats b { font-size: 1.5em; }
+.c-stats small { font-size: .72em; }
+
+/* Dans les grilles, la carte remplit sa colonne (max 200px) */
+.grid .tilt, .showcase .tilt { --w: min(100%, 200px); }
+
+@media (max-width: 700px) {
+  /* ----- Barre du haut + barre d'onglets en bas ----- */
+  .nav { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(10,9,12,.96); }
+  .nav-in { padding: 10px 14px; gap: 10px; flex-wrap: nowrap; }
+  .logo { font-size: 1.35rem; }
+  .user { margin-left: auto; gap: 8px; }
+  .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; order: 0; width: auto; margin: 0; gap: 0; justify-content: space-around; overflow: visible;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); background: rgba(12,10,14,.98); border-top: 1px solid var(--line); }
+  .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px; font-size: .66rem; border-radius: 10px; }
+  .tab.active { background: none; box-shadow: none; color: var(--red); }
+  .ti { display: block; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  main { padding: 18px 14px calc(96px + env(safe-area-inset-bottom)); }
+  footer { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+
+  .title { font-size: 2.2rem; }
+  .section-head { margin: 34px 0 14px; }
+  .section-head h2 { font-size: 1.8rem; }
+
+  /* ----- Accueil ----- */
+  .hero { min-height: 0; padding: 26px 20px; border-radius: 18px; }
+  .hero h1 { font-size: 4rem; }
+  .hero-sub { font-size: .95rem; margin: 10px 0 20px; }
+  .hero-cta .btn { flex: 1 1 100%; }
+  .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat { padding: 13px 14px; }
+  .stat b { font-size: 1.2rem; }
+  .stat:last-child { grid-column: 1 / -1; }
+
+  /* Boosters : une rangée qu'on fait défiler, puis le panneau juste dessous */
+  .booster-grid { display: flex; overflow-x: auto; gap: 14px; padding: 4px 14px 12px; margin: 0 -14px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .booster-grid::-webkit-scrollbar { display: none; }
+  .bt { flex: none; width: 128px; scroll-snap-align: start; }
+  .mini-emblem { width: 54px; height: 54px; font-size: 1.7rem; }
+  .mini-name { font-size: 1.1rem; }
+  .panel { padding: 18px; }
+  .live-card { width: 125px; }
+
+  /* ----- Collection ----- */
+  .filters { flex-direction: column; align-items: stretch; margin-top: 18px; }
+  .filters > * { flex: none !important; width: 100%; }
+  .chips { flex-wrap: nowrap; overflow-x: auto; margin: 0 -14px 18px; padding: 0 14px 4px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; }
+  .grid, .showcase { grid-template-columns: repeat(2, 1fr); gap: 18px 12px; }
+
+  /* ----- Séries / classement / profil ----- */
+  .series-grid { grid-template-columns: 1fr; gap: 12px; }
+  .show-tile { height: 150px; }
+  .podium { gap: 6px; margin-top: 26px; }
+  .pod b { font-size: 1.05rem; }
+  .pod .step { padding: 12px 4px 10px; }
+  .pod.p1 .step { padding-top: 22px; }
+  .pod .step em { font-size: 1.4rem; }
+  .av { width: 50px; height: 50px; font-size: 1.4rem; }
+  .pod.p1 .av { width: 64px; height: 64px; }
+  .rank-row { grid-template-columns: 30px 1fr 74px; padding: 10px 12px; gap: 8px; }
+  .profile-head { padding: 20px; gap: 16px; border-radius: 18px; }
+  .profile-head .av { width: 76px; height: 76px; font-size: 2.2rem; }
+  .profile-stats { width: 100%; justify-content: space-between; gap: 10px; }
+  .profile-stats div b { font-size: 1.35rem; }
+  .box { padding: 16px; }
+  .universes { grid-template-columns: 1fr; }
+
+  /* ----- Ouverture du booster ----- */
+  #stage { gap: 18px; padding: max(16px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom)); overflow-y: auto; }
+  #stage .pack { width: 200px; height: 300px; }
+  .pack-logo { font-size: 1.9rem; }
+  .pack-clap { height: 38px; }
+  #stage-cards { gap: 10px; }
+}
+
+@media (max-width: 380px) {
+  .hero h1 { font-size: 3.4rem; }
+  .logo { font-size: 1.2rem; }
+  #nav-cooldown { font-size: .68rem; padding: 5px 9px; }
+}
