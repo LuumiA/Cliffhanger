@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Marché entre joueurs, échanges et boutique. Utilise les globales de main.js (db, state, $, esc, makeCard, RANK, rarityOf...).
 
-const TICKET = '<svg class="tk" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 2"/></svg>';
+const TICKET = TICKET_SVG;
 const fmt = (n) => Number(n).toLocaleString("fr-FR");
 const priceHTML = (n) => `<span class="price">${TICKET}${fmt(n)}</span>`;
 
@@ -64,7 +64,7 @@ function setMarketTab(tab) {
   marketTab = tab;
   document.querySelectorAll("#market-tabs button").forEach((b) => b.classList.toggle("on", b.dataset.m === tab));
   document.querySelectorAll(".mpane").forEach((p) => (p.hidden = p.id !== `m-${tab}`));
-  ({ browse: renderBrowse, mine: renderMine, trades: renderTrades, shop: renderShop })[tab]();
+  ({ browse: renderBrowse, mine: renderMine, trades: renderTrades })[tab]();
 }
 document.querySelectorAll("#market-tabs button").forEach((b) => b.addEventListener("click", () => setMarketTab(b.dataset.m)));
 
@@ -362,37 +362,6 @@ function startTradeWith(username) {
   showView("market");
 }
 
-// ---------- Boutique ----------
-function renderShop() {
-  const pane = $("m-shop");
-  const full = !state.isAdmin && state.stock >= state.cap;
-  const afford = state.coins >= econ.booster_price;
-  pane.innerHTML = `
-    <div class="shop">
-      <div class="shop-card">
-        <div class="shop-art">🎬</div>
-        <div>
-          <h3>Booster supplémentaire</h3>
-          <p class="muted">Ajoute 1 booster à ton stock (${state.stock}/${state.cap}). Il s'ouvre quand tu veux, sans attendre.</p>
-          <div class="sf-row">${priceHTML(econ.booster_price)}<button class="btn" id="buy-booster" ${full || !afford ? "disabled" : ""}>${full ? "Stock plein" : afford ? "Acheter" : "Pas assez de tickets"}</button></div>
-        </div>
-      </div>
-      <div class="box">
-        <div class="box-head"><b>Gagner des tickets</b></div>
-        <p class="muted">Les tickets viennent des autres joueurs : vends tes cartes sur le marché (même celles que tu n'as qu'en un exemplaire). Le prix est libre, et ${econ.fee_percent} % de frais sont prélevés sur chaque vente.</p>
-        <button class="btn ghost" id="go-sell">Mettre une carte en vente</button>
-      </div>
-    </div>`;
-  $("go-sell").addEventListener("click", () => setMarketTab("mine"));
-  $("buy-booster").addEventListener("click", async () => {
-    $("buy-booster").disabled = true;
-    const { error } = await db.rpc("buy_booster");
-    if (error) { toast(errText(error), true); renderShop(); return; }
-    toast("Booster ajouté à ton stock !");
-    await syncLimits();
-    renderShop();
-  });
-}
 
 // ---------- Actions dans la fenêtre de zoom d'une carte ----------
 function addModalActions(card, qty, holder) {

@@ -29,6 +29,7 @@ const state = {
   stock: 0, // boosters en stock (le serveur fait foi)
   cap: 20, // stock maximum
   nextIn: null, // secondes avant le prochain booster (null = stock plein)
+  price: 100, // prix d'un booster quand le stock gratuit est vide
   coins: 0, // monnaie du jeu
   userId: null,
   isAdmin: false, // compte admin : pas de cooldown (le serveur le vérifie aussi)
@@ -124,8 +125,10 @@ document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () 
 $("home-link").addEventListener("click", () => { $("stage").hidden = true; $("modal").hidden = true; showView("booster"); });
 
 // ---------- Cooldown (affichage : la vraie vérification est côté serveur) ----------
+const TICKET_SVG = '<svg class="tk" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 7v10" stroke-dasharray="2 2"/></svg>';
 const STEP = 10 * 60; // un booster toutes les 10 minutes
-const canOpen = () => state.isAdmin || state.stock > 0;
+const isPaid = () => !state.isAdmin && state.stock < 1;
+const canOpen = () => state.isAdmin || state.stock > 0 || state.coins >= state.price;
 
 function cdValue() {
   return state.isAdmin ? "∞" : `${state.stock}/${state.cap}`;
@@ -140,6 +143,7 @@ const stepProgress = () => (state.isAdmin || state.nextIn === null ? 100 : ((STE
 // Affichage seulement : la vraie vérification est faite par le serveur.
 function renderCooldown() {
   const locked = !canOpen();
+  const paid = isPaid();
   $("status-stock").textContent = cdValue();
   $("status-bar").style.width = `${stepProgress()}%`;
   $("status-coins").textContent = state.coins.toLocaleString("fr-FR");
@@ -152,10 +156,16 @@ function renderCooldown() {
   if (bar) bar.style.width = `${stepProgress()}%`;
 
   const btn = $("panel-open"), cd = $("panel-cd");
-  if (btn) btn.disabled = locked || state.opening;
-  if (cd) cd.textContent = locked ? `Plus de booster : prochain dans ${mmss(state.nextIn ?? 0)}` : "";
+  if (btn) {
+    btn.disabled = locked || state.opening;
+    btn.innerHTML = paid ? `Ouvrir pour ${state.price} ${TICKET_SVG}` : "Ouvrir le booster";
+  }
+  if (cd) cd.textContent = locked ? `Plus de booster gratuit et pas assez de tickets (${state.price} requis) · prochain gratuit dans ${mmss(state.nextIn ?? 0)}` : paid ? `Plus de booster gratuit : prochain dans ${mmss(state.nextIn ?? 0)}` : "";
   const hero = $("hero-open");
-  if (hero) hero.disabled = locked || state.opening;
+  if (hero) {
+    hero.disabled = locked || state.opening;
+    hero.innerHTML = paid ? `Ouvrir un Mix pour ${state.price} ${TICKET_SVG}` : "Ouvrir un booster Mix";
+  }
 }
 
 // Le décompte tourne côté navigateur ; à zéro on redemande le stock au serveur.
@@ -186,6 +196,7 @@ async function syncLimits() {
   state.cap = data.cap;
   state.nextIn = data.next_in;
   state.coins = data.coins ?? 0;
+  state.price = data.price ?? 100;
   state.isAdmin = data.admin;
   renderCooldown();
   startTicker();
@@ -380,13 +391,14 @@ async function openBooster(theme) {
   $("cancel-stage").hidden = true;
   pack.classList.add("snap");
   pack.style.setProperty("--tp", 1);
-  const [{ data, error }] = await Promise.all([db.rpc("open_booster", { p_theme: theme }), wait(650)]);
+  const [{ data, error }] = await Promise.all([db.rpc("open_booster", { p_theme: theme, p_pay: isPaid() }), wait(650)]);
 
   if (error) {
     stage.hidden = true;
     state.opening = false;
     const m = error.message.match(/cooldown:(\d+)/);
     if (m) startCooldown(Number(m[1]));
+    else if (/pas_assez_de_tickets/.test(error.message)) { syncLimits(); alert("Pas assez de tickets pour ouvrir un booster."); }
     else { renderCooldown(); alert("Erreur : " + error.message); }
     return;
   }
