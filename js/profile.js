@@ -117,6 +117,7 @@ function renderProfileView(p) {
       ${p.bio ? `<p class="bio">${esc(p.bio)}</p>` : ""}
       <div class="profile-actions">
         ${p.is_me ? '<button class="btn small" id="p-edit">Personnaliser</button>' : ""}
+        ${p.is_me ? '<button class="btn ghost small" id="p-logout">Déconnexion</button>' : ""}
         <button class="btn ghost small" id="p-copy">${p.is_me ? "Copier mon lien" : "Copier le lien"}</button>
       </div>
     </div>
@@ -128,6 +129,7 @@ function renderProfileView(p) {
     </div>`;
   body.replaceChildren(head);
   head.querySelector("#p-copy").addEventListener("click", (e) => copyProfileLink(p, e.currentTarget));
+  head.querySelector("#p-logout")?.addEventListener("click", () => $("logout").click());
   head.querySelector("#p-edit")?.addEventListener("click", () => openEditor(p));
 
   if (p.restricted) {

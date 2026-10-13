@@ -95,3 +95,10 @@ body { overflow-x: hidden; }
   .logo { font-size: 1.2rem; }
   #nav-cooldown { font-size: .68rem; padding: 5px 9px; }
 }
+
+/* Sur téléphone, la déconnexion est dans la page Profil (la barre du haut manque de place). */
+@media (max-width: 700px) {
+  #logout { display: none; }
+  .user { margin-left: auto; }
+}
+@media (min-width: 701px) { #p-logout { display: none; } }
