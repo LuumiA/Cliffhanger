@@ -55,7 +55,7 @@ const titleName = (key) => TITLES.find((t) => t.key === key)?.name;
 function avatarHTML(p, size = 62) {
   const rank = rankOf(p.unique_cards);
   const inner = p.avatar?.image
-    ? `<img src="${esc(p.avatar.image)}" alt="" referrerpolicy="no-referrer">`
+    ? `<img src="${esc(p.avatar.image)}" alt="">`
     : `<span>${esc((p.username[0] ?? "?").toUpperCase())}</span>`;
   return `<div class="avatar f-${p.frame ?? "auto"}" style="--rank:${rank.color};--s:${size}px"><div class="avatar-in" style="--hue:${p.avatar?.hue ?? 350}">${inner}</div></div>`;
 }
@@ -290,12 +290,12 @@ function buildPicker(container, { max, sel, set, empty }) {
     container.innerHTML = `
       <div class="pk-chosen">${chosen.length ? chosen.map((id, i) => {
         const c = state.cards.find((x) => x.id === id);
-        return `<button class="pk-sel" data-id="${esc(id)}" title="Retirer">${max > 1 ? `<i>${i + 1}</i>` : ""}${c?.image ? `<img src="${esc(c.image)}" alt="" referrerpolicy="no-referrer">` : ""}<span>${esc(c?.name ?? id)}</span></button>`;
+        return `<button class="pk-sel" data-id="${esc(id)}" title="Retirer">${max > 1 ? `<i>${i + 1}</i>` : ""}${c?.image ? `<img src="${esc(c.image)}" alt="">` : ""}<span>${esc(c?.name ?? id)}</span></button>`;
       }).join("") : `<span class="muted">${empty}</span>`}</div>
       <input class="pk-search" type="search" placeholder="Chercher parmi tes cartes" value="${esc(q)}">
       <div class="pk-grid">${list.map((c) => {
         const on = chosen.includes(c.id);
-        return `<button class="pk-tile${on ? " on" : ""}" data-id="${esc(c.id)}" style="--c:${rarityOf(c.rarity).color}">${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span>${esc(c.name)}</span></button>`;
+        return `<button class="pk-tile${on ? " on" : ""}" data-id="${esc(c.id)}" style="--c:${rarityOf(c.rarity).color}">${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy">` : ""}<span>${esc(c.name)}</span></button>`;
       }).join("") || '<p class="muted">Aucune carte ne correspond.</p>'}</div>`;
     container.querySelector(".pk-search").addEventListener("input", (e) => { q = e.target.value.trim().toLowerCase(); const pos = e.target.selectionStart; draw(); const i = container.querySelector(".pk-search"); i.focus(); i.setSelectionRange(pos, pos); });
     container.querySelectorAll(".pk-sel").forEach((b) => b.addEventListener("click", () => { set(sel().filter((x) => x !== b.dataset.id)); draw(); afterPick(); }));

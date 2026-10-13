@@ -27,6 +27,8 @@ const state = {
   owned: new Map(), // card_id -> quantité
   filters: { rarity: "all", show: "all", theme: "all", search: "", missing: true },
   selected: null, // thème du booster choisi (null = Mix)
+  bonus: 0, // boosters bonus restants (ouvrables sans attendre le cooldown)
+  userId: null,
   isAdmin: false, // compte admin : pas de cooldown (le serveur le vérifie aussi)
   username: "",
   memberSince: null,
@@ -68,7 +70,7 @@ function makeCard(c, opts = {}) {
         <div class="card"><div class="card-in">
           <div class="c-top"><span class="c-show">${esc(c.show)}</span><span class="c-rar">${r.name}</span></div>
           <div class="art">
-            ${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="initials">${esc(initials(c.name))}</span>`}
+            ${c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy">` : `<span class="initials">${esc(initials(c.name))}</span>`}
             ${opts.isNew ? `<span class="qty new">NOUVEAU</span>` : opts.qty > 1 ? `<span class="qty">x${opts.qty}</span>` : ""}
           </div>
           <div class="c-name"><b>${esc(c.name)}</b><small>${esc(c.actor)}</small></div>
@@ -120,19 +122,33 @@ document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () 
 $("home-link").addEventListener("click", () => { $("stage").hidden = true; $("modal").hidden = true; showView("booster"); });
 
 // ---------- Cooldown (affichage : la vraie vérification est côté serveur) ----------
+const canOpen = () => state.isAdmin || state.cdLeft <= 0 || state.bonus > 0;
+
+function cdValue() {
+  if (state.isAdmin) return "∞";
+  if (state.cdLeft > 0 && state.bonus === 0) return mmss(state.cdLeft);
+  return "Prêt";
+}
+function cdLabel() {
+  if (state.isAdmin) return "boosters illimités (admin)";
+  if (state.bonus > 0) return `${state.bonus} booster${state.bonus > 1 ? "s" : ""} bonus${state.cdLeft > 0 ? " · prochain gratuit " + mmss(state.cdLeft) : ""}`;
+  return "prochain booster gratuit";
+}
+
 function renderCooldown() {
-  const left = state.cdLeft, locked = left > 0;
+  const left = state.cdLeft, locked = !canOpen();
   const pill = $("nav-cooldown");
-  pill.textContent = state.isAdmin ? "Admin · illimité" : locked ? mmss(left) : "Prêt";
+  pill.textContent = state.isAdmin ? "Admin · illimité" : locked ? mmss(left) : state.bonus > 0 ? `Prêt · ${state.bonus} bonus` : "Prêt";
   pill.classList.toggle("ready", !locked);
 
-  const stat = $("stat-cd"), bar = $("stat-cd-bar");
-  if (stat) stat.textContent = state.isAdmin ? "∞" : locked ? mmss(left) : "Prêt";
-  if (bar) bar.style.width = `${locked ? ((COOLDOWN - left) / COOLDOWN) * 100 : 100}%`;
+  const stat = $("stat-cd"), bar = $("stat-cd-bar"), lab = $("stat-cd-label");
+  if (stat) stat.textContent = cdValue();
+  if (lab) lab.textContent = cdLabel();
+  if (bar) bar.style.width = `${left > 0 && !state.isAdmin ? ((COOLDOWN - left) / COOLDOWN) * 100 : 100}%`;
 
   const btn = $("panel-open"), cd = $("panel-cd");
   if (btn) btn.disabled = locked || state.opening;
-  if (cd) cd.textContent = locked ? `Prochain booster dans ${mmss(left)}` : "";
+  if (cd) cd.textContent = locked ? `Prochain booster dans ${mmss(left)}` : state.bonus > 0 && left > 0 && !state.isAdmin ? `Booster bonus : ${state.bonus} restant${state.bonus > 1 ? "s" : ""}` : "";
   const hero = $("hero-open");
   if (hero) hero.disabled = locked || state.opening;
 }
@@ -149,12 +165,16 @@ function startCooldown(seconds) {
   }, 1000);
 }
 
-async function refreshCooldown(userId) {
-  const { data, error } = await db.from("booster_log").select("last_opened").eq("user_id", userId).maybeSingle();
-  if (error) return console.error(error);
-  if (!data) return;
-  const left = Math.ceil((new Date(data.last_opened).getTime() + COOLDOWN * 1000 - Date.now()) / 1000);
-  if (left > 0) startCooldown(left);
+// Relit auprès du serveur le cooldown et les boosters bonus (après une ouverture, ou à la connexion).
+async function syncLimits() {
+  if (!state.userId) return;
+  const [log, prof] = await Promise.all([
+    db.from("booster_log").select("last_opened").eq("user_id", state.userId).maybeSingle(),
+    db.from("profiles").select("bonus_boosters").eq("id", state.userId).maybeSingle(),
+  ]);
+  if (prof.data) state.bonus = prof.data.bonus_boosters ?? 0;
+  const left = log.data ? Math.ceil((new Date(log.data.last_opened).getTime() + COOLDOWN * 1000 - Date.now()) / 1000) : 0;
+  startCooldown(Math.max(0, left));
 }
 
 // ---------- Données ----------
@@ -210,7 +230,7 @@ function renderStats() {
   const top = state.cards.filter((c) => state.owned.has(c.id) && RANK[c.rarity] >= RANK.culte).length;
   const locked = state.cdLeft > 0;
   $("stats").innerHTML = `
-    <div class="stat"><b id="stat-cd">${state.isAdmin ? "∞" : locked ? mmss(state.cdLeft) : "Prêt"}</b><span>${state.isAdmin ? "boosters illimités (admin)" : "prochain booster gratuit"}</span><div class="mini"><i id="stat-cd-bar" style="--c:var(--gold);width:${locked ? ((COOLDOWN - state.cdLeft) / COOLDOWN) * 100 : 100}%"></i></div></div>
+    <div class="stat"><b id="stat-cd">${cdValue()}</b><span id="stat-cd-label">${cdLabel()}</span><div class="mini"><i id="stat-cd-bar" style="--c:var(--gold);width:${locked ? ((COOLDOWN - state.cdLeft) / COOLDOWN) * 100 : 100}%"></i></div></div>
     <div class="stat"><b>${pctText(pct)} %</b><span>collection · ${n} / ${total} cartes</span><div class="mini"><i style="--c:#3f8ef0;width:${pct}%"></i></div></div>
     <div class="stat"><b>${done}/${all.length}</b><span>séries complètes</span><div class="mini"><i style="--c:#5ee08a;width:${all.length ? (done / all.length) * 100 : 0}%"></i></div></div>
     <div class="stat"><b>${dups}</b><span>doublons à échanger</span></div>
@@ -314,7 +334,7 @@ function waitForPackOpen(pack) {
 }
 
 async function openBooster(theme) {
-  if (state.opening || state.cdLeft > 0) return;
+  if (state.opening || !canOpen()) return;
   state.opening = true;
   renderCooldown();
 
@@ -369,7 +389,7 @@ async function openBooster(theme) {
     seen.add(card.id);
     return { card, isNew };
   });
-  startCooldown(COOLDOWN);
+  syncLimits();
   loadOwned();
   loadLive();
   startDeck(pulled);
@@ -491,7 +511,7 @@ async function loadLive() {
   $("live-row").innerHTML = data.map((p) => {
     const r = rarityOf(p.rarity);
     return `<div class="live-card" style="--c:${r.color}">
-      <div class="live-art">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span>${r.name}</span><b>${esc(p.card_name)}</b></div>
+      <div class="live-art">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : ""}<span>${r.name}</span><b>${esc(p.card_name)}</b></div>
       <div class="live-who">${esc(p.username)}</div>
       <div class="live-time">${timeAgo(p.created_at)}</div>
     </div>`;
@@ -562,7 +582,7 @@ function renderSeries() {
     const tile = document.createElement("button");
     tile.className = "show-tile";
     tile.innerHTML = `
-      ${top.image ? `<img src="${esc(top.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}
+      ${top.image ? `<img src="${esc(top.image)}" alt="" loading="lazy">` : ""}
       <div class="show-info">
         <b>${esc(show)}</b>
         <div class="show-bar"><i style="width:${(got / cards.length) * 100}%"></i></div>
@@ -633,12 +653,15 @@ $("signup").addEventListener("click", async () => {
 $("logout").addEventListener("click", () => db.auth.signOut());
 
 async function onSession(session) {
+  state.userId = session?.user.id ?? null;
   $("auth").hidden = !!session;
   $("game").hidden = !session;
   if (!session) {
     clearInterval(state.cdTimer);
     state.owned = new Map();
     state.cdLeft = 0;
+    state.bonus = 0;
+    state.userId = null;
     $("stage").hidden = true;
     return;
   }
@@ -646,7 +669,7 @@ async function onSession(session) {
   await Promise.all([loadCards(), loadProfile(session.user.id)]);
   await loadOwned();
   routeFromHash();
-  refreshCooldown(session.user.id);
+  syncLimits();
   loadLive();
 }
 
